@@ -1,0 +1,75 @@
+services:
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    container_name: mariadb
+    image: mariadb
+    env_file: 
+      - .env
+    volumes:
+      - /home/ngeny/data/mariadb:/var/lib/mysql
+      - ./requirements/mariadb/tools:/docker-entrypoint-initdb.d
+      - ./requirements/mariadb/tools/init.sql:/init.sql
+    expose:
+      - "3306"
+    restart: always
+    networks:
+      - inception
+
+  wordpress:
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    container_name: wordpress
+    image: wordpress
+    env_file: 
+      - .env
+    volumes:
+      - /home/ngeny/data/wordpress:/var/www/html
+    expose:
+      - "9000"
+    depends_on:
+      - mariadb
+    restart: always
+    networks:
+      - inception
+
+  nginx:
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    image: nginx
+    ports:
+      - "443:443"
+    volumes:
+      - /home/ngeny/data/wordpress:/var/www/html:ro
+    depends_on:
+      - wordpress
+    restart: always
+    networks:
+      - inception
+    restart: always
+    env_file:
+      - ./.env      
+      
+volumes:
+  wordpress:
+    driver: local #local storage of volume
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/home/ngeny/data/wordpress' #where it will be stored locally
+  
+  mariadb:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind' #option qui indique que le volume est en fait un bind mount (liaison) entre un répertoire de l’hôte (/home/ngeny/data/mariadb) et le conteneur
+      device: '/home/ngeny/data/mariadb'    
+
+networks:
+  inception:
+    driver: bridge    
+

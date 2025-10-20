@@ -1,0 +1,56 @@
+docker stop $(docker ps -qa); docker rm $(docker ps -qa); docker rmi -f $(docker images -qa); docker volume rm $(docker volume ls -q); docker network rm $(docker network ls -q) 2>/dev/null
+
+
+**How Docker and docker-compose work?**
+
+- Docker est un outil qui permet de resoudre des problemes de compatibilite
+- Il utilise des contenaires qui permettent d'encapsuler une application et la rendre quasi independante
+- Pour que le contenaire fonctionne il faut une image Docker, soit on trouve l'image dans DockerHub soit on utilise dockerfile pour la construire a partir d'une image de base (debian bulleyes)
+- docker-compose est un outil qui permet de gerer plusieurs contenaires ensemble et de les faire communique.
+
+> les contenaires ont des ports, le network (commande EXPOSE dans  docker-compose) permet la communicqtion entre les contenaires via les ports en interne au docker.
+Les ports peuvent etre exposes (commande PORT dans docker-compose) pour la communication avec l exterieur : internet, le pc,...
+
+> Mariadb expose le port 3306 pour que wordpress puisse communique avec, 
+worpress expose le port 9000 pour que NGINX puisse envoyer ses requettes 
+Nginx expose le port 443 pour se connecter au port 443 d'internet et donc recevoir les requettes d'internet
+
+> Le volume WordPress est relié aux deux containers WordPress+PHP et NGINX pour partager les mêmes fichiers application, permettant a wordpress avec le code php de gérer le contenu dynamique (aticles, uploaad,...) et au container NGINX de servir les fichiers statiques(servir : envoyer les fichiers sur le navigateur)(structure de la page, image, css, js, ....).
+
+> le dossier Data contient deux binds volume (mariadb et wordpress) -> lien direct entre le système de fichiers de ton hôte et le conteneur.
+avantage :
+    . Modification instantanée des fichiers.
+    . Permet d’utiliser des fichiers déjà existants sur l’hôte.
+inconvenient :
+    . probleme de permission qu il faut gerer soit meme
+
+> Pour que les données ne disparessent pas quand un conteneur est supprime
+chaque contenaire a un volume qui lui persiste meme si le contenaire est detruit
+donc on ne perd pas ses donnees
+
+
+**The difference between a Docker image used with docker-compose and without docker-compose**
+
+- Sans docker-compose, il faut gerer manuellemt tout ce que docker-compose fait automatiquement : telecharger ou construire l'image, creer et lancer le conteneur, gerer les reseau pour la communication entre conteneurs, etc....
+- Avec docker-compose tout est automatise avec un seul fichier et juste a lancer une seule commande "docker-compose up"
+
+
+**The benefit of Docker compared to VMs**
+
+- Docker est rapide et leger, il utilise peu de ressources alors que les VMs sont Plus lourd, chaque VM consomme RAM et CPU pour un OS complet
+- Les VM sont plus long a demarrer (plusieurs minutes) contrairement a Docker qui prend quelque seconde
+- Permet de lancer plusieurs services isolés (MariaDB, WordPress, Nginx) sans avoir à créer un OS complet pour chaque service, contrairement aux VM.
+- Idéal pour le développement et pour des projets comme Inception, où il faut gérer plusieurs conteneurs qui communiquent entre eux.
+- Très portable, si une autre personne a Docker d'installer il lui sera tres simple d'executer le programme sans avoir de probleme de compatibilite
+
+
+**The pertinence of the directory structure required for this project**
+**(an example is provided in the subject's PDF file)**
+
+- Chaque service est isolé et possède ses propres fichiers : configuration, scripts d’init, certificats, etc.
+- Les volumes de données sont séparés (data/mariadb, data/wordpress) pour la persistance.
+- Le fichier docker-compose.yml se trouve à la racine srcs/ → facile à lancer tous les services avec docker-compose up.
+
+**The evaluated student has to give you a simple explanation of docker-network.**
+
+Un réseau Docker est un espace privé sur l’ordinateur hôte qui permet aux différents containers (comme la base de données, WordPress+PHP, et NGINX) de communiquer entre eux de manière sécurisée et isolée, tout en permettant aussi l’accès contrôlé vers l’extérieur, comme le web.
